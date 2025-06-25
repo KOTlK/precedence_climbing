@@ -23,14 +23,14 @@
 #define Malloc(type, size) (type*)malloc(size)
 
 enum Token_Type {
-    PLUS         = '+',
-    MINUS        = '-',
-    MUL          = '*',
-    DIV          = '/',
-    EXP          = '^',
-    MOD          = '%',
-    NONE         = 256,
-    NUMBER       = 257,
+    PLUS             = '+',
+    MINUS            = '-',
+    MUL              = '*',
+    DIV              = '/',
+    EXP              = '^',
+    MOD              = '%',
+    NONE             = 256,
+    NUMBER           = 257,
     OPENPARENTHESES  = 258,
     CLOSEPARENTHESES = 259
 };
@@ -60,6 +60,35 @@ struct Thestring {
 
     char &operator[](u32 i)        { return text[i]; }
     inline void set(u32 i, char c) { text[i] = c; }
+};
+
+const Associativity assoc_map[] = {
+    [PLUS]  = LEFT,
+    [MINUS] = LEFT,
+    [MUL]   = LEFT,
+    [DIV]   = LEFT,
+    [EXP]   = RIGHT,
+    [MOD]   = LEFT
+};
+
+const s32 precedence_map[] = {
+    [PLUS]  = 10,
+    [MINUS] = 10,
+    [MUL]   = 20,
+    [DIV]   = 20,
+    [MOD]   = 20,
+    [EXP]   = 30
+};
+
+const char *token_str_map[] = {
+    [PLUS]  = "+",
+    [MINUS] = "-",
+    [MUL]   = "*",
+    [DIV]   = "/",
+    [EXP]   = "^",
+    [MOD]   = "%",
+    [OPENPARENTHESES]  = "OPENPARENTHESES",
+    [CLOSEPARENTHESES] = "CLOSEPARENTHESES"
 };
 
 Thestring    *make_string(char *txt);
@@ -251,26 +280,15 @@ Tokenizer *tokenize(Thestring *txt) {
 }
 
 const char *token_to_str(Token token) {
-    switch(token.type) {
-        case PLUS  : return "+";
-        case MINUS : return "-";
-        case MUL   : return "*";
-        case DIV   : return "/";
-        case EXP   : return "^";
-        case MOD   : return "%";
-        case NUMBER       : {
-            char *buf = (char*)malloc(10); // Leak. don't care.
+    if (token.type == NUMBER) {
+        char *buf = (char*)malloc(10); // Leak. don't care.
 
-            sprintf(buf, "%i", token.value);
+        sprintf(buf, "%i", token.value);
 
-            return buf;
-        }
-        case OPENPARENTHESES  : return "OPENPARENTHESES";
-        case CLOSEPARENTHESES : return "CLOSEPARENTHESES";
-        default : {
-            return "UNKNOWN";
-        }
+        return buf;
     }
+
+    return token_str_map[token.type];
 }
 
 void push_token(Tokenizer *tokenizer, Token token) {
@@ -289,15 +307,7 @@ s32 is_number(char c) {
 }
 
 s32 get_precedence(Token token) {
-    switch(token.type) {
-        case PLUS         : return 10;
-        case MINUS        : return 10;
-        case MUL          : return 20;
-        case DIV          : return 20;
-        case MOD          : return 20;
-        case EXP          : return 30;
-        default : return 0;
-    }
+    return precedence_map[token.type];
 }
 
 s32 compute_operator(Token token, s32 lhs, s32 rhs) {
@@ -374,15 +384,7 @@ void print_error() {
 }
 
 Associativity get_associativity(Token token) {
-    switch(token.type) {
-        case PLUS  : return LEFT;
-        case MINUS : return LEFT;
-        case MUL   : return LEFT;
-        case DIV   : return LEFT;
-        case EXP   : return RIGHT;
-        case MOD   : return LEFT;
-        default : return LEFT;
-    }
+    return assoc_map[token.type];
 }
 
 bool is_operator_or_parentheses(Token token) {
